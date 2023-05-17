@@ -1,4 +1,10 @@
 #__initial function definition
+def is_int(c):
+    try:
+        int(c)
+        return 0
+    except:
+        return 1
 def BinaryConverter(n): #use for generating memory addresses
     a=bin(n)[2::]
     if len(a)<7:
@@ -9,6 +15,7 @@ def halt_error_check(i_set):#checks for any error regarding halt statemnt, like 
         if i_set[i].split()[0][-1]==':':
             if i_set[i].split()[-1]=='hlt':
                 if i != (len(i_set)-1):
+                    print('hlt label found but not at end')
                     return 1
                 else:
                     return 0 
@@ -16,12 +23,27 @@ def halt_error_check(i_set):#checks for any error regarding halt statemnt, like 
                 continue 
         elif i_set[i]=='hlt':
             if i != (len(i_set)-1):
+                print('hlt cmd found but not at end')
                 return 1 
             else:
                 return 0 
     else:
+        print('No hlt cmd was found')
         return 1     
+def typo(cmd):#check if the user made a typo like typing adx instead of add etc..
+    ret_val=0
+    if cmd.split()[0][-1]==":":
+        return ret_val 
+    elif cmd.split()[0]=='var':
+        return ret_val
+    else:
+        if cmd.split()[0] not in valid_instr:
+            print(f'{cmd}:',end=' ')
+            print('Invalid instruction')
+            ret_val=1
+    return ret_val
 def oth_var_err(i_set,var_lis):#check if a var is declared twice or if it is declared somewhere in middle
+    ret_val=0
     x=list(set(var_lis))
     if len(x)==len(var_lis):
         fl=False
@@ -31,47 +53,41 @@ def oth_var_err(i_set,var_lis):#check if a var is declared twice or if it is dec
             elif i_set[i].split()[0] != 'var':
                 fl=True
             elif i_set[i].split()[0]=='var' and fl==True:
-                return 1  
-        else:
-            return 0
+                   ret_val=1
+                   print(f'{i_set[i]}:',end=' ')
+                   print('variable was not declared in begining')
     else:
-        return 1               
-def typo(i_set):#check if the user made a typo like typing adx instead of add etc..
-    for i in i_set:
-        if i.split()[0][-1]==":":
-            continue 
-        elif i.split()[0]=='var':
-            continue 
-        else:
-            if i.split()[0] not in valid_instr:
-                return 1 
-    else: 
-        return 0
-def undef_var(i_set):#if user uses an undeclared variable
-    for i in range(len(i_set)):
-        if i_set[i].split()[0]=='var' or i_set[i].split()[0][-1]==':':
-            continue
-        elif valid_instr[i_set[i].split()[0]]["type"]=='d':
-            if i_set[i].split()[-1] not in variables:
-                return 1 
-    else: 
-        return 0
-def variable_error(i_set,var_lis):#combines the two other functions handling error regarding variable declartion
-    if oth_var_err(i_set,var_lis)==1 or undef_var(i_set)==1:
-        return 1 
+        print('Variable declared more than once')
+        ret_val=1
+    return ret_val                        
+def undef_var(cmd,var_lis):#if user uses an undeclared variable
+    ret_val=0
+    if cmd.split()[0][-1]==':' or cmd.split()[0]=='var':
+        return ret_val
     else:
-        return 0
+        if valid_instr[cmd.split()[0]]["type"]=='d' and cmd.split()[-1] not in var_lis:
+            print(f'{cmd}:',end=' ')
+            print(f'Undefined varibale {cmd.split()[-1]}')
+            ret_val=1
+    return ret_val
 def ill_flag(i_set):#illegal usage of flags
+    ret_val=0
     for i in i_set:
         if 'FLAGS' in i.split():
             if i.split()[0] != 'mov':
-                return 1 
+                print(f'{i}:',end=' ')
+                print('FLAGS register was not accessed via mov cmd')
+                ret_val=1 
             else:
                 if i.split()[-1] != 'FLAGS' or i.split()[1]=='FLAGS':
-                    return 1 
-    else:
-        return 0 
+                    print(f'{i}:',end=' ')
+                    print('FLAGS can only be read from not written in')
+                    ret_val=1 
+    return ret_val 
 def A_op_code(cmd):#makes op code of command if it is of type A
+    if len(cmd.split()) != 4:
+        print(f'{cmd}: must contain 3 parameters')
+        return 1 
     regs=cmd.split()[1::]
     for x in regs:
         if x not in allowed_register:
@@ -81,21 +97,39 @@ def A_op_code(cmd):#makes op code of command if it is of type A
         opc=valid_instr[cmd.split()[0]]["opcode"]+'00'+allowed_register[regs[0]]+allowed_register[regs[1]]+allowed_register[regs[2]]
         return opc
 def B_op_code(cmd):#makes op code of command if it is of type B
-    reg=cmd.split()[1]
-    if reg not in allowed_register:
-        print('invalid register')
-        return 1 
-    else:
-        if cmd.split()[-1]=='FLAGS':
-            opc='00011'+'00000'+allowed_register[reg]+allowed_register['FLAGS']
-            return opc
-        elif int(cmd.split()[-1][1::])>127 or int(cmd.split()[-1][1::])<0:
-            print('Invalid Immediate value')
-            return 1 
+    if len(cmd.split()) != 3:
+        print(f'{cmd}: must contain 2 parameters')
+        return 1
+    if cmd.split()[2][0]=='$':
+        regs=cmd.split()[1]
+        if regs not in allowed_register:
+            print('Invalid register')
+            return 1
+        if is_int(cmd.split()[2][1::]):
+            print('not a vaild integer')
+            return 1
         else:
-            opc=valid_instr[cmd.split()[0]]["opcode"]+'0'+allowed_register[reg]+BinaryConverter(int((cmd.split()[-1][1::])))
-            return opc
+            if int(cmd.split()[2][1::])>127 or int(cmd.split()[2][1::])<0:
+                print('Immmediate value out of range')
+                return 1
+            else:
+                opc='00010'+'0'+allowed_register[regs]+BinaryConverter(int(cmd.split()[2][1::]))
+                return opc
+    else:
+        regs=cmd.split()[1::]
+        for x in regs:
+            if x not in allowed_register:
+                if is_int(cmd.split()[2]):
+                    print('invalid register used')
+                else:
+                    print('Expected $ before immediate')
+                    return 1
+        else:
+            opc='00011'+'00000'+allowed_register[regs[0]]+allowed_register[regs[1]]
+        return opc 
 def C_op_code(cmd):#makes op code of command if it is of type C
+    if len(cmd.split()) != 3:
+        print(f'{cmd}: must contain 2 parameters')
     regs=[cmd.split()[1],cmd.split()[2]]
     for x in regs:
         if x not in allowed_register:
@@ -104,6 +138,8 @@ def C_op_code(cmd):#makes op code of command if it is of type C
         opc=valid_instr[cmd.split()[0]]["opcode"]+'00000'+allowed_register[regs[0]]+allowed_register[regs[1]]
         return opc      
 def D_op_code(cmd):#makes op code of command if it is of type D
+    if len(cmd.split()) != 3:
+        print(f'{cmd}: must contain 2 parameters')
     addr=cmd.split()[-1]
     reg=cmd.split()[1]
     if addr not in mem_set:
@@ -114,8 +150,11 @@ def D_op_code(cmd):#makes op code of command if it is of type D
         opc=valid_instr[cmd.split()[0]]["opcode"]+'0'+allowed_register[reg]+mem_set[addr]
         return opc
 def E_op_code(cmd):#makes op code of command if it is of type E
+    if len(cmd.split()) != 2:
+        print(f'{cmd}: must contain 1 parameters')
     addr=cmd.split()[-1]+':'
     if addr not in mem_set:
+        print(f'{cmd}: no such memory address exist')
         return 1
     else:
         opc=valid_instr[cmd.split()[0]]["opcode"]+'0000'+mem_set[addr]
@@ -169,7 +208,6 @@ for i in f.readlines():#creates instr_set and mem_set
         continue 
     else:
         if i.split()[0]=='var':
-            
             variables.append(i.strip().split()[-1])
             instr_set.append(i.strip())
         else:
@@ -188,33 +226,29 @@ for i in f.readlines():#creates instr_set and mem_set
 for i in range(len(variables)):#adds address of variables
     mem_set[variables[i]]=BinaryConverter(line_counter+i+1)
 #this turns to 1 when we find an error
-error_flag=halt_error_check(instr_set)#now we check for different error
-if error_flag==0:
-    error_flag=typo(instr_set)
-    if error_flag==0:
-        error_flag=variable_error(instr_set,variables)
-        if error_flag==0:
-            error_flag=ill_flag(instr_set)
-            if error_flag==0:
-                for i in instr_set:
-                    if i.split()[0]=='var' or i.split()[0][-1]==':':
-                        continue
-                    elif op_decider(i)==1:
-                        print('error')
-                        break
-                    else:
-                        opcodes.append(op_decider(i))
-            else:
-                print('Illegal Flag usage')#corresponding messages for errors
-        else: 
-            print('Variable usage error')
+halt_error_check(instr_set)
+flag=0
+for j in instr_set:
+    #typo(j)
+    if typo(j)!=1:
+        undef_var(j,variables)
+        if undef_var==1:
+            flag=1
     else:
-        print('You made a typo')
-else:
-    print('hlt statement error')
+        flag=1
+oth_var_err(instr_set,variables)
+ill_flag(instr_set)
+wr_fl=False
+for cmd in instr_set:
+    if cmd.split()[0] not in valid_instr:
+        continue
+    if op_decider(cmd)==1:
+        wr_fl=True
+    elif op_decider(cmd) != 1 and wr_fl==False:
+        opcodes.append(op_decider(cmd))
+if wr_fl==False:
+    F=open("C:\\CO project\\opc.txt","w+")
+    for i in opcodes:
+        F.write(f'{i}\n')
+    F.close()
 f.close()
-F=open("C:\\CO project\\opc.txt","w+")
-for i in opcodes:
-    s=f'{i}\n'
-    F.write(s)
-F.close()
