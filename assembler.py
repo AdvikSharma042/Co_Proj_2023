@@ -1,3 +1,4 @@
+import sys
 #__initial function definition
 def is_int(c):
     try:
@@ -197,13 +198,13 @@ valid_instr = {
         "je" : {"opcode" : "11111", "type" : "e"},
         "hlt" : {"opcode" : "11010", "type" : "f"}}
 allowed_register = {"R0" : "000","R1" : "001", "R2" : "010" , "R3" : "011" , "R4" : "100" , "R5" : "101" , "R6" :"110", "FLAGS" : "111"}#same for registers
-f=open("C:\\CO project\\assm_prog.txt","r+")
+f=sys.stdin.readlines()
 instr_set=[]#contains every instruction in the file
 variables=[] #contains every vairable
 mem_set={}#contains every memory address required like that of labels or variable
 line_counter=0#algo decided upon is that we convert the line number in binary
 opcodes=[]#constains all the opcodes if file is error free
-for i in f.readlines():#creates instr_set and mem_set
+for i in f:#creates instr_set and mem_set
     if i=="\n":
         continue 
     else:
@@ -220,7 +221,7 @@ for i in f.readlines():#creates instr_set and mem_set
             line_counter+=1
             if i.split()[0][-1]==':':
                 if len(i.split())==1:
-                    mem_set[i.split()[0]]=BinaryConverter(line_counter+1)
+                    mem_set[i.split()[0]]=BinaryConverter(line_counter-1)
                 else:
                     mem_set[i.split()[0]]=BinaryConverter(line_counter)
 for i in range(len(variables)):#adds address of variables
@@ -247,8 +248,5 @@ for cmd in instr_set:
     elif op_decider(cmd) != 1 and wr_fl==False:
         opcodes.append(op_decider(cmd))
 if wr_fl==False:
-    F=open("C:\\CO project\\opc.txt","w+")
-    for i in opcodes:
-        F.write(f'{i}\n')
-    F.close()
-f.close()
+    for i in  opcodes:
+        print(f'{i}\n')
