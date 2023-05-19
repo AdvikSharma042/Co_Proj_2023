@@ -205,27 +205,21 @@ mem_set={}#contains every memory address required like that of labels or variabl
 line_counter=0#algo decided upon is that we convert the line number in binary
 opcodes=[]#constains all the opcodes if file is error free
 for i in f:#creates instr_set and mem_set
-    if i=="\n":
-        continue 
+    read_state=i.strip()
+    if read_state.split()[0]=='var':
+        instr_set.append(read_state)
+        variables.append(read_state.split()[-1])
     else:
-        if i.split()[0]=='var':
-            variables.append(i.strip().split()[-1])
-            instr_set.append(i.strip())
-        else:
-            if i.strip().split()[0][-1]==':':
-                x=i.strip().split()[1::]
-                s=' '
-                instr_set.append(s.join(x))
-            else:
-                instr_set.append(i.strip())
+        if read_state.split()[0][-1]==':':
+            mem_set[read_state.split()[0]]=BinaryConverter(line_counter)
+            s=' '
+            instr_set.append(s.join(read_state.split()[1::]))
             line_counter+=1
-            if i.split()[0][-1]==':':
-                if len(i.split())==1:
-                    mem_set[i.split()[0]]=BinaryConverter(line_counter-1)
-                else:
-                    mem_set[i.split()[0]]=BinaryConverter(line_counter)
+        else:
+            instr_set.append(read_state)
+            line_counter+=1
 for i in range(len(variables)):#adds address of variables
-    mem_set[variables[i]]=BinaryConverter(line_counter+i+1)
+    mem_set[variables[i]]=BinaryConverter(line_counter+i)
 #this turns to 1 when we find an error
 halt_error_check(instr_set)
 flag=0
@@ -249,4 +243,4 @@ for cmd in instr_set:
         opcodes.append(op_decider(cmd))
 if wr_fl==False:
     for i in  opcodes:
-        print(f'{i}\n')
+        print(f'{i}\n')   
