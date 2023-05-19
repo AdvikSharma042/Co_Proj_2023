@@ -233,7 +233,7 @@ for j in instr_set:
         flag=1
 oth_var_err(instr_set,variables)
 ill_flag(instr_set)
-if flag==1 or (halt_error_check(instr_set)+oth_var_err(instr_set+variables)+ill_flag(instr_set))>1:
+if flag==1 or (halt_error_check(instr_set)+oth_var_err(instr_set,variables)+ill_flag(instr_set))>1:
     exit(0)
 wr_fl=False
 for cmd in instr_set:
