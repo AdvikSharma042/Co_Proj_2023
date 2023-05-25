@@ -205,6 +205,8 @@ mem_set={}#contains every memory address required like that of labels or variabl
 line_counter=0#algo decided upon is that we convert the line number in binary
 opcodes=[]#constains all the opcodes if file is error free
 for i in f:#creates instr_set and mem_set
+    if i=='\n':
+        continue
     read_state=i.strip()
     if read_state.split()[0]=='var':
         instr_set.append(read_state)
